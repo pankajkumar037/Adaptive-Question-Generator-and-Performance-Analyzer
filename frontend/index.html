@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Question Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-8">Adaptive Question Generator</h1>
+
+        <div id="setup-section" class="section active">
+            <p class="text-gray-600 mb-6 text-center">Configure the quiz parameters below.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                    <label for="board" class="block text-sm font-medium mb-1">Board</label>
+                    <input type="text" id="board" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5" value="CBSE">
+                </div>
+                <div>
+                    <label for="class-level" class="block text-sm font-medium mb-1">Class</label>
+                    <input type="text" id="class-level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5" value="Class 8">
+                </div>
+                <div>
+                    <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
+                    <input type="text" id="subject" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5" value="Mathematics">
+                </div>
+            </div>
+            <button id="start-quiz" class="w-full start-button">Start Quiz</button>
+        </div>
+
+        <div id="quiz-section" class="section">
+            <div class="mb-6 flex justify-between items-center text-gray-600" id="quiz-status-bar">
+                <p class="text-base font-medium"><i class="fas fa-chart-line mr-2 text-blue-500"></i>Difficulty Level: <span id="difficulty-level" class="font-bold text-blue-600">1</span></p>
+                <p class="text-base font-medium"><i class="fas fa-question-circle mr-2 text-blue-500"></i>Question: <span id="question-count" class="font-bold text-blue-600">0</span>/10</p>
+            </div>
+            <div id="question-area" class="mb-6">
+                <p id="question-text" class="text-xl font-semibold text-gray-800 mb-6"></p>
+                <div id="options-container">
+                    </div>
+                <button id="submit-answer" class="mt-4 w-full submit-button" disabled>Submit Answer</button> </div>
+
+            <div id="confidence-section" class="hidden">
+                <p>How confident are you in your answer?</p>
+                <div class="confidence-buttons mb-4">
+                    <button data-confidence="1">1</button>
+                    <button data-confidence="2">2</button>
+                    <button data-confidence="3">3</button>
+                    <button data-confidence="4">4</button>
+                    <button data-confidence="5">5</button>
+                </div>
+                 <button id="submit-confidence" class="w-full" disabled>Submit Confidence</button>
+            </div>
+
+
+            <div id="feedback-area" class="hidden">
+                 <p id="feedback-status" class="feedback-status"></p>
+                <p id="explanation-text" class="explanation"></p>
+                <button id="next-question" class="mt-6 w-full next-button">Next Question</button>
+            </div>
+
+            <div id="loading-spinner" class="flex justify-center items-center mt-6">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <div id="results-section" class="section">
+             <h2>Quiz Results</h2>
+
+             <div class="results-summary mb-8">
+                 <p id="final-accuracy"></p>
+                 <p id="final-difficulty"></p>
+                 <p id="total-time"></p>
+             </div>
+
+             <div class="interpretation-block">
+                 <h3>Classical Scoring Interpretation</h3>
+                 <p id="classical-interpretation"></p>
+             </div>
+
+             <div class="interpretation-block">
+                 <h3>Time-Based Interpretation (Overall)</h3>
+                 <p id="time-interpretation"></p>
+                 <p class="text-sm text-gray-600 mt-2 italic">Interpretation based on your total time and overall performance.</p>
+             </div>
+
+              <div class="interpretation-block">
+                 <h3>Confidence-Based Assessment (Per Question)</h3>
+                 <div id="cba-interpretations">
+                     </div>
+             </div>
+
+
+             <button id="restart-quiz" class="mt-8 w-full start-button">Try Another Quiz</button>
+        </div>
+
+    </div>
+
+    <script src="./script.js"></script>
+
+</body>
+</html>

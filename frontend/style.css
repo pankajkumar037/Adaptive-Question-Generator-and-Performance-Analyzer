@@ -1,0 +1,250 @@
+/* Copy and paste the entire content of the <style> block here */
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #eef2f6; /* Light blue-gray background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    color: #374151; /* Default text color */
+}
+.container {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 16px; /* Slightly larger border-radius */
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08); /* Softer, larger shadow */
+    max-width: 800px;
+    width: 100%;
+    border-top: 6px solid #3b82f6; /* Accent top border */
+}
+h1 {
+    color: #1f2937; /* Darker heading color */
+}
+h2 { /* Styling for section titles within results */
+     font-size: 1.6rem;
+     font-weight: 700;
+     margin-bottom: 15px;
+     color: #065f46; /* Dark green */
+     text-align: center;
+}
+h3 { /* Styling for sub-titles within results interpretations */
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #075985; /* Darker cyan */
+}
+label {
+    color: #4b5563; /* Slightly darker label color */
+}
+input[type="text"] {
+    border-color: #d1d5db; /* Standard border color */
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+input[type="text"]:focus {
+    border-color: #3b82f6; /* Blue border on focus */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Blue focus ring */
+}
+button {
+     transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+.start-button {
+    background-color: #3b82f6; /* Blue */
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+.start-button:hover {
+    background-color: #2563eb; /* Darker blue on hover */
+}
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #3b82f6;
+    border-radius: 50%;
+    width: 30px; /* Slightly larger spinner */
+    height: 30px;
+    animation: spin 1s linear infinite;
+    display: none; /* Hidden by default */
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.option-button {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 12px; /* Increased margin */
+    padding: 12px 16px; /* Increased padding */
+    border-radius: 8px; /* Rounded corners */
+    background-color: #f3f4f6; /* Light gray */
+    border: 1px solid #e5e7eb; /* Subtle border */
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    font-weight: 500;
+    color: #4b5563;
+}
+.option-button:not(:disabled):hover {
+    background-color: #e5e7eb; /* Slightly darker gray on hover */
+    border-color: #d1d5db;
+}
+.option-button.selected {
+    background-color: #bfdbfe; /* Light blue */
+    border-color: #60a5fa; /* Blue border */
+    border-width: 2px; /* Thicker border */
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1); /* Subtle blue shadow */
+}
+ .option-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+ }
+.correct-answer {
+    background-color: #d1fae5 !important; /* Green */
+    border-color: #34d399 !important; /* Darker green border */
+    border-width: 2px;
+    font-weight: 600;
+    color: #065f46 !important; /* Dark green text */
+}
+.incorrect-answer {
+    background-color: #fee2e2 !important; /* Red */
+    border-color: #f87171 !important; /* Darker red border */
+    border-width: 2px;
+    font-weight: 600;
+    color: #991b1b !important; /* Dark red text */
+}
+.explanation {
+    margin-top: 25px; /* More space above explanation */
+    padding: 20px; /* More padding */
+    background-color: #e0f2fe; /* Lighter blue */
+    border-left: 5px solid #0ea5e9; /* Cyan border */
+    border-radius: 6px;
+    color: #075985; /* Darker cyan text */
+    font-style: italic;
+}
+.explanation strong {
+    color: #0369a1; /* Even darker cyan for emphasis */
+}
+.submit-button {
+    background-color: #6b7280; /* Gray */
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+.submit-button:not(:disabled):hover {
+    background-color: #4b5563; /* Darker gray on hover */
+}
+.submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.next-button {
+    background-color: #10b981; /* Green */
+    color: white;
+     padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+.next-button:hover {
+    background-color: #059669; /* Darker green on hover */
+}
+ .results-section {
+    background-color: #dcfce7; /* Light green */
+    color: #166534; /* Dark green */
+    padding: 25px;
+    border-radius: 12px;
+    margin-top: 20px;
+    border: 2px dashed #34d399; /* Dashed green border */
+ }
+
+ .results-summary p {
+     font-size: 1.1rem;
+     margin-bottom: 10px;
+     font-weight: 500;
+     color: #166534; /* Dark green */
+     text-align: center;
+ }
+
+ .interpretation-block {
+     margin-top: 25px;
+     padding-top: 15px;
+     border-top: 1px solid #a7f3d0; /* Light green border */
+ }
+
+ .interpretation-block p {
+     font-size: 1rem;
+     margin-bottom: 8px;
+     color: #166534;
+     text-align: left;
+ }
+
+ .feedback-status {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+ }
+ .feedback-status.correct {
+    color: #065f46; /* Dark green */
+ }
+ .feedback-status.incorrect {
+    color: #991b1b; /* Dark red */
+ }
+
+ .section { /* Utility class for managing sections */
+     display: none;
+ }
+ .section.active {
+     display: block;
+ }
+
+ #confidence-section {
+     margin-top: 20px;
+     padding: 20px;
+     background-color: #fff;
+     border-radius: 8px;
+     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+     text-align: center;
+ }
+ #confidence-section p {
+     font-size: 1.1rem;
+     font-weight: 600;
+     margin-bottom: 15px;
+     color: #1f2937;
+ }
+ .confidence-buttons button {
+     width: 50px; /* Fixed width for confidence buttons */
+     height: 50px; /* Fixed height */
+     border-radius: 50%; /* Make them round */
+     margin: 0 5px; /* Space between buttons */
+     font-size: 1rem;
+     font-weight: 700;
+     background-color: #e5e7eb;
+     color: #4b5563;
+     border: 2px solid transparent;
+     transition: background-color 0.2s ease, border-color 0.2s ease;
+ }
+ .confidence-buttons button:hover {
+     background-color: #d1d5db;
+ }
+ .confidence-buttons button.selected-confidence {
+     background-color: #3b82f6;
+     color: white;
+     border-color: #2563eb;
+ }
+ #submit-confidence {
+     margin-top: 20px;
+     background-color: #10b981; /* Green */
+     color: white;
+     padding: 12px 24px;
+     border-radius: 8px;
+     font-weight: 600;
+ }
+ #submit-confidence:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #6b7280;
+ }
