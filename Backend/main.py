@@ -1,14 +1,28 @@
 import json
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import logging
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    from Backend.Question_generation.question_openai import generate_Question
+except ImportError:
+    logger.error("Could not import generate_Question. Ensure the path is correct.")
+    def generate_Question(*args, **kwargs):
+        logger.error("generate_Question function is not available.")
+        raise NotImplementedError("Question generation backend is not available.")
+
 
 app = FastAPI()
-from Backend.Question_generation.question_openai import generate_Question
 
 # app.add_middleware(
 #     CORSMiddleware,
+#     allow_origins=["http://your-production-frontend-url.com"],
 #     allow_credentials=True,
 #     allow_methods=["*"],
 #     allow_headers=["*"],
@@ -23,24 +37,61 @@ class MCQRequest(BaseModel):
 @app.websocket("/generate_mcq")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    logger.info("WebSocket connection accepted.")
 
     try:
         while True:
-            
             data = await websocket.receive_text()
-            request_data = json.loads(data)
-            
-            mcq_response = generate_Question(
-                subject=request_data["subject"],
-                class_level=request_data["class_level"],
-                board=request_data["board"],
-                difficulty=request_data["difficulty"]
-            )
-            
-            await websocket.send_json(mcq_response)
-    
-    except WebSocketDisconnect:
-        print("Client disconnected")
+            logger.info(f"Received data: {data}")
+
+            try:
+                request_data = json.loads(data)
+                subject = request_data.get("subject")
+                class_level = request_data.get("class_level")
+                board = request_data.get("board")
+                difficulty = request_data.get("difficulty")
+
+                if not all([subject, class_level, board, difficulty is not None]):
+                     logger.warning("Missing required fields in request data.")
+                     await websocket.send_json({"error": "Missing required fields (subject, class_level, board, difficulty)."})
+                     continue
+
+            except json.JSONDecodeError:
+                logger.error("Failed to decode JSON from received data.")
+                await websocket.send_json({"error": "Invalid JSON format."})
+                continue
+            except Exception as e:
+                 logger.error(f"Error processing received data: {e}")
+                 await websocket.send_json({"error": f"Error processing request: {e}"})
+                 continue
+
+
+            try:
+                mcq_response = generate_Question(
+                    subject=subject,
+                    class_level=class_level,
+                    board=board,
+                    difficulty=difficulty
+                )
+                logger.info("Question generated successfully.")
+
+                await websocket.send_json(mcq_response)
+
+            except NotImplementedError:
+                 logger.error("Question generation function is not implemented or available.")
+                 await websocket.send_json({"error": "Question generation service is not available."})
+            except Exception as e:
+                logger.error(f"Error during question generation: {e}")
+                await websocket.send_json({"error": "An error occurred during question generation."})
+
+    except WebSocketDisconnect as e:
+        logger.info(f"WebSocket client disconnected: {e.code} - {e.reason}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred in the websocket connection: {e}")
+    finally:
+        pass
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    logger.info("Running Uvicorn in development mode.")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
