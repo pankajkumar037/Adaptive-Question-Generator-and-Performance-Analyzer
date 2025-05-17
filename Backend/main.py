@@ -1,12 +1,18 @@
 import json
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI()
-from Question_generation.question import generate_Question
+from Backend.Question_generation.question_openai import generate_Question
 
-
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 class MCQRequest(BaseModel):
     subject: str

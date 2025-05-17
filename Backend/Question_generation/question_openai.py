@@ -57,5 +57,6 @@ def generate_Question(subject: str, class_level: str, board: str, difficulty: in
     except Exception as e:
         print("Failed to parse response:", e)
         return {"error": "Could not parse response", "raw": result}
+    
 
 
