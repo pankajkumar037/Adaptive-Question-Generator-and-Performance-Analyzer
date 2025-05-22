@@ -25,14 +25,19 @@ if google_api_key:
         print("Please check your API key and model name.")
 
 
+# base_path = os.path.dirname(__file__)
+# file_path = os.path.join(base_path, "NEP_adaptive_data.txt")
 
-with open("NEP_adaptive_data.txt", "r", encoding="utf-8") as f:
-    Adaptive_data = f.read()
+# print("file path--",file_path)
+
+# with open(file_path, "r", encoding="utf-8") as f:
+#     Adaptive_data = f.read()
+
 
 
 
 def generate_Question(subject: str, class_level: str, board: str, difficulty: int) -> dict:
-   
+    
    
     if not model_available or model is None:
         print("Model is not available. Cannot generate content.")
@@ -49,7 +54,7 @@ def generate_Question(subject: str, class_level: str, board: str, difficulty: in
     Generates an adaptive multiple-choice question based on subject, class, and board and current difficulty.
     learning_outcome : Specific learning outcome according to subject, class_level, board
     make sure every Question you ask from diffrent difficulty level is from diffrent chapters and diificulty of Question Increses by level means if Level 1 most Basic Queston Level 10 hard Question
-    Your all Qn should be NEP of India data {Adaptive_data}
+    Your all Qn should be NEP 2020 of India data 
 
     Parameters:
     Difficulty has a Scale of 10
@@ -59,6 +64,7 @@ def generate_Question(subject: str, class_level: str, board: str, difficulty: in
     difficulty (int): Current Difficulty level of the question on scale of 10 to be generated .
 
     The format should be JSON:
+    not a sigle word aprt of json
     {{
     "question": "Your question here?",
     "options": ["Option A", "Option B", "Option C", "Option D"],
