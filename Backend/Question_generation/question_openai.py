@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+with open("NEP_adaptive_data.txt", "r", encoding="utf-8") as f:
+    Adaptive_data = f.read()
+
+
+
 def generate_Question(subject: str, class_level: str, board: str, difficulty: int) -> dict:
     prompt = f"""
     Generate one Multiple Choice Question (MCQ) based on the following parameters:
@@ -17,6 +22,7 @@ def generate_Question(subject: str, class_level: str, board: str, difficulty: in
     Generates an adaptive multiple-choice question based on subject, class, and board and current difficulty.
     learning_outcome : Specific learning outcome according to subject, class_level, board
     make sure every Question you ask from diffrent difficulty level is from diffrent chapters and diificulty of Question Increses by level means if Level 1 most Basic Queston Level 10 hard Question
+    Your all Qn should be NEP of India data {Adaptive_data}
 
     Parameters:
     Difficulty has a Scale of 10

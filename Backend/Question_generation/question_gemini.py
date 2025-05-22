@@ -25,6 +25,12 @@ if google_api_key:
         print("Please check your API key and model name.")
 
 
+
+with open("NEP_adaptive_data.txt", "r", encoding="utf-8") as f:
+    Adaptive_data = f.read()
+
+
+
 def generate_Question(subject: str, class_level: str, board: str, difficulty: int) -> dict:
    
    
@@ -43,6 +49,7 @@ def generate_Question(subject: str, class_level: str, board: str, difficulty: in
     Generates an adaptive multiple-choice question based on subject, class, and board and current difficulty.
     learning_outcome : Specific learning outcome according to subject, class_level, board
     make sure every Question you ask from diffrent difficulty level is from diffrent chapters and diificulty of Question Increses by level means if Level 1 most Basic Queston Level 10 hard Question
+    Your all Qn should be NEP of India data {Adaptive_data}
 
     Parameters:
     Difficulty has a Scale of 10
