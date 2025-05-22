@@ -9,24 +9,18 @@ from typing import Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-try:
-    from Backend.Question_generation.question_openai import generate_Question
-except ImportError:
-    logger.error("Could not import generate_Question. Ensure the path is correct.")
-    def generate_Question(*args, **kwargs):
-        logger.error("generate_Question function is not available.")
-        raise NotImplementedError("Question generation backend is not available.")
+from Question_generation.question_gemini import generate_Question
 
 
 app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://your-production-frontend-url.com"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class MCQRequest(BaseModel):
     subject: str
