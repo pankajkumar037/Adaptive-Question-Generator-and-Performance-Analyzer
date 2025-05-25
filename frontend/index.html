@@ -3,107 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adaptive Question Generator</title>
+    <title>Test Question Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="./style.css">
-
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center mb-8">Adaptive Question Generator</h1>
+<body class="bg-gray-100 flex justify-center items-start min-h-screen p-8">
+    <div class="container bg-white p-10 rounded-3xl shadow-xl w-full max-w-4xl mt-8">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-8">Test Question Generator</h1>
 
-        <div id="setup-section" class="section active">
-            <p class="text-gray-600 mb-6 text-center">Configure the quiz parameters below.</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div>
-                    <label for="board" class="block text-sm font-medium mb-1">Board</label>
-                    <input type="text" id="board" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5" value="CBSE">
-                </div>
-                <div>
-                    <label for="class-level" class="block text-sm font-medium mb-1">Class</label>
-                    <input type="text" id="class-level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5" value="Class 8">
-                </div>
-                <div>
-                    <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
-                    <input type="text" id="subject" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5" value="Mathematics">
-                </div>
+        <div id="input-section" class="space-y-4">
+            <div>
+                <label for="board" class="block text-gray-700 text-lg font-semibold mb-2">Board:</label>
+                <input type="text" id="board" placeholder="e.g., CBSE, ICSE, State Board"
+                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
             </div>
-            <button id="start-quiz" class="w-full start-button">Start Quiz</button>
+            <div>
+                <label for="class" class="block text-gray-700 text-lg font-semibold mb-2">Class (1-12):</label>
+                <input type="text" id="class" placeholder="e.g., 10"
+                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+            </div>
+            <div>
+                <label for="subject-names" class="block text-gray-700 text-lg font-semibold mb-2">Subject Names (comma-separated):</label>
+                <input type="text" id="subject-names" placeholder="e.g., Physics, Chemistry, Math"
+                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+            </div>
+            <button id="generate-questions-btn"
+                    class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg">
+                Generate Questions
+            </button>
         </div>
 
-        <div id="quiz-section" class="section">
-            <div class="mb-6 flex justify-between items-center text-gray-600" id="quiz-status-bar">
-                <p class="text-base font-medium"><i class="fas fa-chart-line mr-2 text-blue-500"></i>Difficulty Level: <span id="difficulty-level" class="font-bold text-blue-600">1</span></p>
-                <p class="text-base font-medium"><i class="fas fa-question-circle mr-2 text-blue-500"></i>Question: <span id="question-count" class="font-bold text-blue-600">0</span>/10</p>
-            </div>
-            <div id="question-area" class="mb-6">
-                <p id="question-text" class="text-xl font-semibold text-gray-800 mb-6"></p>
-                <div id="options-container">
+        <div id="loading-overlay" class="loading-overlay">
+            <div id="loading-spinner" class="loading-spinner"></div>
+            <div id="loading-quote" class="loading-quote"></div>
+        </div>
+
+        <div id="question-section" class="hidden mt-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Generated Questions</h2>
+            <div id="questions-container" class="space-y-6">
+                </div>
+            <button id="submit-answers-btn"
+                    class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mt-8">
+                Submit Answers
+            </button>
+        </div>
+
+        <div id="result-section" class="hidden mt-8 p-6 bg-blue-50 rounded-xl shadow-md text-center">
+            <h2 class="text-3xl font-bold text-blue-800 mb-4">Quiz Results</h2>
+            <p id="score-display" class="text-2xl font-semibold text-gray-700 mb-6"></p>
+
+            <button id="improvement-button"
+                    class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mb-6 hidden">
+                Get Improvement Suggestions
+            </button>
+
+            <div id="improvement-report-display" class="mt-6 p-4 bg-purple-100 border-l-4 border-purple-500 text-left rounded-lg hidden">
+                <h3 class="text-xl font-bold text-purple-800 mb-3">Improvement Report:</h3>
+                <p id="improvement-report-text" class="text-gray-700 mb-4"></p>
+                <div id="improvement-chapters-container">
                     </div>
-                <button id="submit-answer" class="mt-4 w-full submit-button" disabled>Submit Answer</button> </div>
+            </div>
 
-            <div id="confidence-section" class="hidden">
-                <p>How confident are you in your answer?</p>
-                <div class="confidence-buttons mb-4">
-                    <button data-confidence="1">1</button>
-                    <button data-confidence="2">2</button>
-                    <button data-confidence="3">3</button>
-                    <button data-confidence="4">4</button>
-                    <button data-confidence="5">5</button>
+            <div id="answer-review" class="mt-8 text-left">
+                <h3 class="text-xl font-bold text-gray-700 mb-4 border-t-2 border-indigo-200 pt-4">Your Answers:</h3>
                 </div>
-                 <button id="submit-confidence" class="w-full" disabled>Submit Confidence</button>
-            </div>
 
-
-            <div id="feedback-area" class="hidden">
-                 <p id="feedback-status" class="feedback-status"></p>
-                <p id="explanation-text" class="explanation"></p>
-                <button id="next-question" class="mt-6 w-full next-button">Next Question</button>
-            </div>
-
-            <div id="loading-spinner" class="flex justify-center items-center mt-6">
-                <div class="spinner"></div>
+            <div id="result-actions" class="space-y-4 mt-8">
+                <button id="retake-button"
+                        class="w-full bg-yellow-600 text-white font-bold py-3 rounded-xl hover:bg-yellow-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg hidden">
+                    Generate Questions for Previous Class
+                </button>
             </div>
         </div>
 
-        <div id="results-section" class="section">
-             <h2>Quiz Results</h2>
-
-             <div class="results-summary mb-8">
-                 <p id="final-accuracy"></p>
-                 <p id="final-difficulty"></p>
-                 <p id="total-time"></p>
-             </div>
-
-             <div class="interpretation-block">
-                 <h3>Classical Scoring Interpretation</h3>
-                 <p id="classical-interpretation"></p>
-             </div>
-
-             <div class="interpretation-block">
-                 <h3>Time-Based Interpretation (Overall)</h3>
-                 <p id="time-interpretation"></p>
-                 <p class="text-sm text-gray-600 mt-2 italic">Interpretation based on your total time and overall performance.</p>
-             </div>
-
-              <div class="interpretation-block">
-                 <h3>Confidence-Based Assessment (Per Question)</h3>
-                 <div id="cba-interpretations">
-                     </div>
-             </div>
-
-
-             <button id="restart-quiz" class="mt-8 w-full start-button">Try Another Quiz</button>
-        </div>
-
+        <div id="message-box" class="message-box"></div>
     </div>
 
-    <script src="./script.js"></script>
-
+    <script src="script.js"></script>
 </body>
-</html>
+</html> 

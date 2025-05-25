@@ -1,7 +1,10 @@
 openai
-fastapi
-uvicorn[standard]
+fastapi>=0.68.0
+uvicorn[standard]>=0.15.0
 python-dotenv
 google-generativeai
-langchain-community
 pypdf
+slowapi>=0.1.4
+pydantic>=1.8.0
+python-multipart
+email-validator

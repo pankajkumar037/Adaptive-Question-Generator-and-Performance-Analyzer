@@ -1,91 +1,130 @@
-import json
-import uvicorn
-import logging
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, Query, Body, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
+import random
+import logging
+import time
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+import uvicorn
+from contextlib import asynccontextmanager
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
-from Question_generation.question_gemini import generate_Question
+limiter = Limiter(key_func=get_remote_address)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting up application...")
+    yield
+    logger.info("Shutting down application...")
 
-app = FastAPI()
+app = FastAPI(
+    title="MCQ Generator API",
+    description="API for generating multiple choice questions and analyzing performance",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
-class MCQRequest(BaseModel):
-    subject: str
-    class_level: str
-    board: str
-    difficulty: int
+from Question_generation.question_openai import generate_Question, improvements_in_subject
 
-@app.websocket("/generate_mcq")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    logger.info("WebSocket connection accepted.")
+class MCQ(BaseModel):
+    question: str = Field(..., min_length=10)
+    options: List[str] = Field(..., min_items=4, max_items=4)
+    answer: str
+    Explanation: str = Field(..., min_length=20)
 
+class ImprovementRequest(BaseModel):
+    questions: Dict[str, List[Dict[str, Any]]]
+    user_answers: Dict[str, List[Dict[str, Any]]]
+    class_at_call: int = Field(..., ge=1, le=12)
+    was_retake_attempt: bool = False
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global error handler caught: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Please try again later."}
+    )
+
+@app.get("/generate_mcq")
+@limiter.limit("5/minute")
+async def generate_mcq(
+    request: Request,
+    board: str = Query(..., min_length=2, max_length=50),
+    class_name: int = Query(..., ge=1, le=12),
+    subjects: str = Query(..., min_length=2)
+):
     try:
-        while True:
-            data = await websocket.receive_text()
-            logger.info(f"Received data: {data}")
-
-            try:
-                request_data = json.loads(data)
-                subject = request_data.get("subject")
-                class_level = request_data.get("class_level")
-                board = request_data.get("board")
-                difficulty = request_data.get("difficulty")
-
-                if not all([subject, class_level, board, difficulty is not None]):
-                     logger.warning("Missing required fields in request data.")
-                     await websocket.send_json({"error": "Missing required fields (subject, class_level, board, difficulty)."})
-                     continue
-
-            except json.JSONDecodeError:
-                logger.error("Failed to decode JSON from received data.")
-                await websocket.send_json({"error": "Invalid JSON format."})
-                continue
-            except Exception as e:
-                 logger.error(f"Error processing received data: {e}")
-                 await websocket.send_json({"error": f"Error processing request: {e}"})
-                 continue
-
-
-            try:
-                mcq_response = generate_Question(
-                    subject=subject,
-                    class_level=class_level,
-                    board=board,
-                    difficulty=difficulty
-                )
-                logger.info("Question generated successfully.")
-
-                await websocket.send_json(mcq_response)
-
-            except NotImplementedError:
-                 logger.error("Question generation function is not implemented or available.")
-                 await websocket.send_json({"error": "Question generation service is not available."})
-            except Exception as e:
-                logger.error(f"Error during question generation: {e}")
-                await websocket.send_json({"error": "An error occurred during question generation."})
-
-    except WebSocketDisconnect as e:
-        logger.info(f"WebSocket client disconnected: {e.code} - {e.reason}")
+        logger.info(f"Generating MCQs for board: {board}, class: {class_name}, subjects: {subjects}")
+        questions_data = generate_Question(subjects, board, class_name)
+        
+        if "error" in questions_data:
+            logger.error(f"Error generating questions: {questions_data['error']}")
+            raise HTTPException(status_code=500, detail=questions_data["error"])
+            
+        return questions_data
     except Exception as e:
-        logger.error(f"An unexpected error occurred in the websocket connection: {e}")
-    finally:
-        pass
+        logger.error(f"Error in generate_mcq: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate questions")
+
+@app.post("/improvement")
+@limiter.limit("3/minute")
+async def improvement(request: Request, payload: ImprovementRequest):
+    try:
+        logger.info("Generating improvement suggestions")
+        suggestions = improvements_in_subject(payload.dict())
+        
+        if "error" in suggestions:
+            logger.error(f"Error generating suggestions: {suggestions['error']}")
+            raise HTTPException(status_code=500, detail=suggestions["error"])
+            
+        return suggestions
+    except Exception as e:
+        logger.error(f"Error in improvement: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate improvement suggestions")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
-    logger.info("Running Uvicorn in development mode.")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False,
+        workers=4,
+        log_level="info"
+    )
