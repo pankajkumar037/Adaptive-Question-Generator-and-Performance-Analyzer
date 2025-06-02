@@ -94,7 +94,7 @@ def generate_Question(subject: str,board: str, curr_class:int) -> dict:
 
    
     response = client.chat.completions.create(
-        model="gpt-4",  
+        model="gpt-3.5-turbo",  
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7
     )

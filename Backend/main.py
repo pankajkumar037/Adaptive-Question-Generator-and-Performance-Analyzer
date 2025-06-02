@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Query, Body, HTTPException, Request
+from fastapi import FastAPI, Query, Body, HTTPException, Request,UploadFile,File,Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
+from fastapi.responses import JSONResponse
+import tempfile
+import shutil
 import random
 import logging
 import time
@@ -11,6 +14,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import uvicorn
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +53,11 @@ app.add_middleware(
 )
 
 from Question_generation.question_openai import generate_Question, improvements_in_subject
+from reading_test.read import generate_reading_content_using_gpt
+import slowapi
+from reading_test.read import reading_pipeline
+
+
 
 class MCQ(BaseModel):
     question: str = Field(..., min_length=10)
@@ -79,7 +88,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 @app.get("/generate_mcq")
-@limiter.limit("5/minute")
 async def generate_mcq(
     request: Request,
     board: str = Query(..., min_length=2, max_length=50),
@@ -95,12 +103,12 @@ async def generate_mcq(
             raise HTTPException(status_code=500, detail=questions_data["error"])
             
         return questions_data
+
     except Exception as e:
         logger.error(f"Error in generate_mcq: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to generate questions")
 
 @app.post("/improvement")
-@limiter.limit("3/minute")
 async def improvement(request: Request, payload: ImprovementRequest):
     try:
         logger.info("Generating improvement suggestions")
@@ -114,6 +122,47 @@ async def improvement(request: Request, payload: ImprovementRequest):
     except Exception as e:
         logger.error(f"Error in improvement: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to generate improvement suggestions")
+    
+
+
+
+
+#Reading_section
+
+
+@app.get("/generate_reading_content")
+async def generate_reading_content(
+    request: Request,
+    board: str = Query(..., min_length=2, max_length=50),
+    class_name: int = Query(..., ge=1, le=12),
+    subject: str = Query(..., min_length=2)
+):
+    details = {"board": board, "class_name": class_name, "subject": subject}
+    result = generate_reading_content_using_gpt(details)
+    return JSONResponse(content={"text_content": result})
+
+
+
+
+@app.post("/analyze_reading")
+async def analyze_reading(
+    audio_file: UploadFile = File(...),
+    original_text: str = Form(...),
+    subject: str = Form(...)
+):
+    
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
+            shutil.copyfileobj(audio_file.file, temp_audio)
+            temp_audio_path = temp_audio.name
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save uploaded audio: {str(e)}")
+
+    result = reading_pipeline(temp_audio_path, original_text, subject)
+    print(result)
+    return JSONResponse(content=result)
+    
+
 
 @app.get("/health")
 async def health_check():

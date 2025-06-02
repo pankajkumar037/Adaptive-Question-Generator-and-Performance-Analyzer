@@ -21,9 +21,10 @@ body {
 }
 
 input[type="text"],
-button {
+button,
+select {
     padding: 0.75rem 1rem;
-    border-radius: 0.75rem; /* Rounded corners for inputs/buttons */
+    border-radius: 0.75rem; /* Rounded corners for inputs/buttons/select */
     border: 1px solid #d1d5db; /* Light gray border */
     width: 100%;
     margin-bottom: 1rem;
@@ -31,7 +32,8 @@ button {
     transition: all 0.2s ease-in-out;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+select:focus {
     outline: none;
     border-color: #6366f1; /* Indigo on focus */
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Focus ring */
@@ -169,7 +171,7 @@ button:hover {
     border-color: #ef4444; /* Red border */
 }
 
-.question-block .option-label.correct-answer { /* Apply to all correct answers, regardless of user choice */
+.question-block .option-label.correct-answer {
     background-color: #d1fae5; /* Light green for correct option */
     border-color: #34d399; /* Green border */
 }
@@ -241,4 +243,99 @@ button:hover {
 
 .improvement-chapters-list li {
     margin-bottom: 0.25rem;
+}
+
+/* Reading Section Specific Styles */
+.reading-content-display {
+    background-color: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    min-height: 150px;
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #374151;
+    margin-bottom: 1.5rem;
+    overflow-y: auto; /* Enable scrolling for long text */
+    max-height: 300px; /* Limit height */
+}
+
+.reading-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem; /* Space between buttons */
+    margin-top: 1.5rem;
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+}
+
+.reading-controls button {
+    width: auto; /* Allow buttons to size content */
+    padding: 0.75rem 1.5rem;
+    margin-bottom: 0; /* Override default margin-bottom */
+    display: inline-block; /* For side-by-side layout */
+}
+
+.reading-results-display {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #ecfdf5; /* Light green background for results */
+    border-radius: 1rem;
+    border: 1px solid #a7f3d0; /* Green border */
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.reading-results-display h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #047857; /* Dark green for heading */
+    margin-bottom: 1rem;
+}
+
+.reading-results-display p {
+    margin-bottom: 0.5rem;
+    color: #10b981; /* Green text for results */
+}
+
+.reading-results-display ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+    color: #10b981;
+}
+
+.reading-results-display ul li {
+    margin-bottom: 0.25rem;
+}
+
+.reading-results-display .error-text {
+    color: #ef4444; /* Red for error messages */
+}
+
+.reading-results-display strong {
+    color: #065f46; /* Darker green for strong text */
+}
+
+.reading-results-display .transcribed-text {
+    background-color: #d1fae5; /* Very light green for transcribed text */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+    color: #064e3b; /* Darker green for transcribed text */
+}
+
+/* Recording Indicator Styles */
+.recording-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: #ef4444; /* Red */
+    border-radius: 50%;
+    animation: pulse 1s infinite alternate; /* Pulsating animation */
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(1.2); opacity: 1; }
 } 

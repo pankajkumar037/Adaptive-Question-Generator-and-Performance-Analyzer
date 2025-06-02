@@ -8,3 +8,4 @@ slowapi>=0.1.4
 pydantic>=1.8.0
 python-multipart
 email-validator
+slowapi

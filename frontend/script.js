@@ -3,20 +3,28 @@ let questionsData = {}; // Stores all fetched questions, grouped by subject for 
 let userAnswers = {};   // Stores user's selected answers for each question in the current attempt
 let currentBoard = '';
 let currentClass = 0;   // Store as a number for calculations
-let currentSubjects = [];
+let currentSubjects = ["Hindi", "English", "Maths", "SST", "Science"]; // Fixed subjects
 let score = 0;          // To store the last calculated score
 let retakeAttempted = false; // Flag to track if a retake has occurred
+let studentName = ''; // New variable for student name
+
+// Reading Section Specific Variables
+let mediaRecorder;
+let audioChunks = [];
+let audioBlob;
+let currentReadingText = '';
+let selectedReadingSubject = ''; // English or Hindi
 
 // Get DOM elements
 const inputSection = document.getElementById('input-section');
+const studentNameInput = document.getElementById('student-name');
 const boardInput = document.getElementById('board');
-const classInput = document.getElementById('class');
-const subjectNamesInput = document.getElementById('subject-names');
+const classSelect = document.getElementById('class');
 const generateQuestionsBtn = document.getElementById('generate-questions-btn');
 
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingSpinner = document.getElementById('loading-spinner');
-const loadingQuote = document.getElementById('loading-quote'); // New element for the quote
+const loadingQuote = document.getElementById('loading-quote');
 
 const questionSection = document.getElementById('question-section');
 const questionsContainer = document.getElementById('questions-container');
@@ -30,8 +38,22 @@ const improvementReportDisplay = document.getElementById('improvement-report-dis
 const improvementReportText = document.getElementById('improvement-report-text');
 const improvementChaptersContainer = document.getElementById('improvement-chapters-container');
 const answerReviewContainer = document.getElementById('answer-review');
+const proceedToReadingTestBtn = document.getElementById('proceed-to-reading-test-btn');
+
+const readingSection = document.getElementById('reading-section');
+const readingSubjectSelect = document.getElementById('reading-subject-select');
+const getReadingTextBtn = document.getElementById('get-reading-text-btn');
+const readingContentDisplay = document.getElementById('reading-content');
+const startRecordingBtn = document.getElementById('start-recording-btn');
+const stopRecordingBtn = document.getElementById('stop-recording-btn');
+const submitReadingBtn = document.getElementById('submit-reading-btn');
+const readingResultsDisplay = document.getElementById('reading-results-display');
+const recordingStatus = document.getElementById('recording-status');
 
 const messageBox = document.getElementById('message-box');
+
+// Fixed classes for dropdown
+const availableClasses = Array.from({length: 10}, (_, i) => i + 1); // Generates [1, 2, ..., 10]
 
 // Motivational quotes for the spinner
 const motivationalQuotes = [
@@ -47,6 +69,19 @@ const motivationalQuotes = [
 ];
 
 // --- Helper Functions ---
+
+/**
+ * Populates the class dropdown with options from 1 to 10.
+ */
+function populateClassDropdown() {
+    classSelect.innerHTML = '<option value="" disabled selected>Select Class</option>'; // Default disabled option
+    availableClasses.forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls;
+        option.textContent = cls;
+        classSelect.appendChild(option);
+    });
+}
 
 /**
  * Displays a temporary message box.
@@ -87,6 +122,7 @@ function resetUI() {
     inputSection.classList.remove('hidden');
     questionSection.classList.add('hidden');
     resultSection.classList.add('hidden');
+    readingSection.classList.add('hidden'); // Hide reading section on reset
     improvementReportDisplay.classList.add('hidden');
     questionsContainer.innerHTML = ''; // Clear previous questions
     answerReviewContainer.innerHTML = ''; // Clear previous answer review
@@ -97,13 +133,32 @@ function resetUI() {
     score = 0; // Reset score
     retakeButton.classList.add('hidden');
     improvementButton.classList.add('hidden');
+    proceedToReadingTestBtn.classList.add('hidden'); // Hide this button too
     retakeAttempted = false; // Reset retake flag
+    classSelect.value = ''; // Reset class dropdown
+    studentNameInput.value = ''; // Clear student name input
+    boardInput.value = ''; // Clear board input
+
+    // Reset reading section specific elements
+    readingSubjectSelect.value = '';
+    readingContentDisplay.innerHTML = '<p class="text-gray-500">Reading passage will appear here...</p>';
+    startRecordingBtn.disabled = true;
+    stopRecordingBtn.disabled = true;
+    submitReadingBtn.disabled = true;
+    readingResultsDisplay.classList.add('hidden');
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>';
+    recordingStatus.classList.add('hidden'); // Hide recording animation
+    audioChunks = [];
+    audioBlob = null;
+    currentReadingText = '';
+    selectedReadingSubject = '';
 }
 
 /** Clears the question and result sections (used when generating new questions). */
 function clearQuestionAndResultSections() {
     questionSection.classList.add('hidden');
     resultSection.classList.add('hidden');
+    readingSection.classList.add('hidden'); // Also hide reading section
     improvementReportDisplay.classList.add('hidden');
     questionsContainer.innerHTML = '';
     answerReviewContainer.innerHTML = ''; // Clear previous answer review
@@ -111,6 +166,7 @@ function clearQuestionAndResultSections() {
     improvementChaptersContainer.innerHTML = ''; // Clear previous chapters
     retakeButton.classList.add('hidden');
     improvementButton.classList.add('hidden');
+    proceedToReadingTestBtn.classList.add('hidden'); // Hide this button too
 }
 
 // --- API Calls ---
@@ -228,6 +284,167 @@ async function fetchImprovementTopics(currentQuestionsData, currentUserAnswers) 
     }
 }
 
+/**
+ * Fetches reading content from the backend.
+ * @param {string} subject - The subject for reading (English or Hindi).
+ */
+async function fetchReadingContent(subject) {
+    showLoading();
+    readingContentDisplay.innerHTML = '<p class="text-gray-500">Fetching reading passage...</p>';
+    startRecordingBtn.disabled = true;
+    stopRecordingBtn.disabled = true;
+    submitReadingBtn.disabled = true;
+    readingResultsDisplay.classList.add('hidden');
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>'; // Clear previous results
+
+    try {
+        const params = new URLSearchParams({
+            board: currentBoard,
+            class_name: String(currentClass),
+            subject: subject
+        }).toString();
+        const apiUrl = `http://127.0.0.1:8000/generate_reading_content?${params}`;
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        currentReadingText = data.text_content;
+        readingContentDisplay.innerHTML = `<p>${currentReadingText}</p>`;
+        startRecordingBtn.disabled = false; // Enable start recording button
+        showMessage(`Reading passage for ${subject} loaded.`, 'success');
+
+    } catch (error) {
+        console.error('Error fetching reading content:', error);
+        readingContentDisplay.innerHTML = `<p class="error-text">Failed to load reading passage: ${error.message}</p>`;
+        showMessage(`Failed to load reading passage: ${error.message}`, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Starts recording audio from the microphone.
+ */
+async function startRecording() {
+    audioChunks = []; // Clear previous audio chunks
+    audioBlob = null; // Clear previous audio blob
+    readingResultsDisplay.classList.add('hidden'); // Hide previous results
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Use webm for broader compatibility
+            // You can now enable the submit button
+            submitReadingBtn.disabled = false;
+            showMessage('Recording stopped. Ready to submit.', 'info');
+            // Stop the microphone stream tracks to release the mic
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        startRecordingBtn.disabled = true;
+        stopRecordingBtn.disabled = false;
+        submitReadingBtn.disabled = true; // Disable submit until recording is stopped
+        recordingStatus.classList.remove('hidden'); // Show recording animation
+        showMessage('Recording started...', 'success');
+
+    } catch (error) {
+        console.error('Error accessing microphone:', error);
+        showMessage(`Error accessing microphone: ${error.message}. Please allow microphone access.`, 'error');
+        startRecordingBtn.disabled = false; // Re-enable if error
+    }
+}
+
+/**
+ * Stops recording audio.
+ */
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        startRecordingBtn.disabled = false;
+        stopRecordingBtn.disabled = true;
+        recordingStatus.classList.add('hidden'); // Hide recording animation
+    }
+}
+
+/**
+ * Submits the recorded audio and original text to the backend for analysis.
+ */
+async function submitReading() {
+    if (!audioBlob || !currentReadingText || !selectedReadingSubject) {
+        showMessage('No recording or reading text available to submit.', 'error');
+        return;
+    }
+
+    showLoading();
+    readingResultsDisplay.classList.add('hidden'); // Hide previous results
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3><p>Analyzing your reading...</p>'; // Show loading message
+
+    try {
+        const formData = new FormData();
+        formData.append('audio_file', audioBlob, 'recording.webm'); // Filename can be anything
+        formData.append('original_text', currentReadingText);
+        formData.append('subject', selectedReadingSubject);
+
+        const apiUrl = `http://127.0.0.1:8000/analyze_reading`; // Your backend endpoint
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            body: formData,
+            // No 'Content-Type' header needed for FormData, browser sets it automatically
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        displayReadingResults(result); // Display the analysis results
+
+    } catch (error) {
+        console.error('Error submitting reading for analysis:', error);
+        readingResultsDisplay.classList.remove('hidden');
+        readingResultsDisplay.innerHTML = `<h3 class="error-text">Error Analyzing Reading:</h3><p class="error-text">${error.message}</p>`;
+        showMessage(`Failed to analyze reading: ${error.message}`, 'error');
+    } finally {
+        hideLoading();
+        submitReadingBtn.disabled = true; // Disable submit after attempt
+    }
+}
+
+/**
+ * Displays the reading analysis results.
+ * @param {object} data - The analysis data from the backend with new keys.
+ * {
+ * "transcribed_text": "the given transcribed text",
+ * "wpm": "words per miniute",
+ * "accuracy": "accuarcy of Transcribed text with respect to original text",
+ * "fluency": "Fluecy score of Transcription in 1-100 acore",
+ * "recommendation": "recoemendation for impovement what user can improve in their reading"
+ * }
+ */
+function displayReadingResults(data) {
+    readingResultsDisplay.innerHTML = `
+        <h3>Reading Analysis Results:</h3>
+        <p><strong>Your Transcription:</strong></p>
+        <div class="transcribed-text">${data.transcribed_text || 'N/A'}</div>
+        <p class="mt-4"><strong>Words Per Minute (WPM):</strong> ${data.wpm || 'N/A'}</p>
+        <p><strong>Accuracy:</strong> ${data.accuracy || 'N/A'}</p>
+        <p><strong>Fluency Score (1-100):</strong> ${data.fluency || 'N/A'}</p>
+        <p><strong>Recommendation for Improvement:</strong> ${data.recommendation || 'No specific recommendations.'}</p>
+    `;
+    readingResultsDisplay.classList.remove('hidden');
+    showMessage('Reading analysis complete!', 'success');
+}
+
 // --- UI Rendering Functions ---
 
 /**
@@ -284,22 +501,33 @@ function renderQuestions(data) {
 
 /** Handles the click event for the "Generate Questions" button. */
 async function handleGenerateQuestions() {
+    studentName = studentNameInput.value.trim(); // Get student name
     currentBoard = boardInput.value.trim();
-    const classVal = classInput.value.trim();
-    currentSubjects = subjectNamesInput.value.split(',').map(s => s.trim()).filter(s => s !== '');
+    const classVal = classSelect.value;
+    // currentSubjects is now fixed globally, no need to get from UI
 
     const numericClass = parseInt(classVal, 10);
 
-    if (!currentBoard || currentSubjects.length === 0) {
-        showMessage('Please fill in Board and at least one Subject.', 'error');
+    if (!studentName) {
+        showMessage('Please enter your Name.', 'error');
         return;
     }
-    if (isNaN(numericClass) || numericClass < 1 || numericClass > 12) {
-        showMessage('Please enter a valid Class number between 1 and 12.', 'error');
+    if (!currentBoard) {
+        showMessage('Please fill in Board Name.', 'error');
+        return;
+    }
+    if (!classVal) { // Check if a class is selected
+        showMessage('Please select a Class.', 'error');
+        return;
+    }
+    // No subject validation needed as they are fixed
+    if (isNaN(numericClass) || numericClass < 1 || numericClass > 10) {
+        showMessage('Please select a valid Class number between 1 and 10.', 'error');
         return;
     }
 
     currentClass = numericClass; // Store as number
+    // currentSubjects is already set globally
     retakeAttempted = false; // Reset retake flag for a new generation flow
     await fetchQuestions(currentBoard, currentClass, currentSubjects);
 }
@@ -432,9 +660,11 @@ function displayResults(finalScore) {
     improvementReportDisplay.classList.add('hidden'); // Ensure report is hidden
     improvementReportText.textContent = ''; // Clear previous report
     improvementChaptersContainer.innerHTML = ''; // Clear previous chapters
+    proceedToReadingTestBtn.classList.remove('hidden'); // Show proceed to reading test button
 
     if (finalScore < 40) {
         // If score is less than 40%
+        // Allow retake only once and if class can be decremented by 1 (e.g., class 1 -> cannot retake, class 2 -> class 1)
         if (!retakeAttempted && currentClass >= 2) {
             retakeButton.classList.remove('hidden');
             retakeButton.textContent = `Generate Questions for Class ${currentClass - 1}`;
@@ -453,6 +683,7 @@ function displayResults(finalScore) {
 
 /** Handles the click event for the "Generate Questions for Previous Class" button. */
 async function handleRetake() {
+    // Changed from currentClass >= 3 to currentClass >= 2 to allow decrement by 1
     if (currentClass >= 2) {
         retakeAttempted = true; // Mark retake as attempted
         currentClass = currentClass - 1; // Decrement class by 1
@@ -460,7 +691,7 @@ async function handleRetake() {
         await fetchQuestions(currentBoard, currentClass, currentSubjects);
         resultSection.classList.add('hidden'); // Hide results while new questions load
     } else {
-        showMessage('Cannot go back further (already at Class 1).', 'info');
+        showMessage('Cannot go back further (already at Class 1).', 'info'); // Updated message
         improvementButton.classList.remove('hidden'); // Offer improvement instead
     }
 }
@@ -471,12 +702,63 @@ async function handleGetImprovementTopics() {
     await fetchImprovementTopics(questionsData, userAnswers);
 }
 
+/** Handles the click event for the "Proceed to Reading Test" button. */
+function handleProceedToReadingTest() {
+    resultSection.classList.add('hidden'); // Hide quiz results
+    readingSection.classList.remove('hidden'); // Show reading section
+    // Reset reading section state for new test
+    readingSubjectSelect.value = '';
+    readingContentDisplay.innerHTML = '<p class="text-gray-500">Reading passage will appear here...</p>';
+    startRecordingBtn.disabled = true;
+    stopRecordingBtn.disabled = true;
+    submitReadingBtn.disabled = true;
+    readingResultsDisplay.classList.add('hidden');
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>';
+    recordingStatus.classList.add('hidden'); // Hide recording animation
+    audioChunks = [];
+    audioBlob = null;
+    currentReadingText = '';
+    selectedReadingSubject = '';
+    showMessage('Select a language and get reading text to begin.', 'info');
+}
+
+/** Handles the change event for the reading subject dropdown. */
+function handleReadingSubjectChange() {
+    selectedReadingSubject = readingSubjectSelect.value;
+    if (selectedReadingSubject) {
+        getReadingTextBtn.disabled = false;
+    } else {
+        getReadingTextBtn.disabled = true;
+    }
+    // Reset reading content and buttons if subject changes
+    readingContentDisplay.innerHTML = '<p class="text-gray-500">Reading passage will appear here...</p>';
+    startRecordingBtn.disabled = true;
+    stopRecordingBtn.disabled = true;
+    submitReadingBtn.disabled = true;
+    readingResultsDisplay.classList.add('hidden');
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>';
+    recordingStatus.classList.add('hidden'); // Hide recording animation
+    audioChunks = [];
+    audioBlob = null;
+    currentReadingText = '';
+}
+
 // --- Initialize Application ---
 function initializeApp() {
+    populateClassDropdown();
+
     generateQuestionsBtn.addEventListener('click', handleGenerateQuestions);
     submitAnswersBtn.addEventListener('click', handleSubmitAnswers);
     retakeButton.addEventListener('click', handleRetake);
     improvementButton.addEventListener('click', handleGetImprovementTopics);
+    proceedToReadingTestBtn.addEventListener('click', handleProceedToReadingTest);
+
+    // Reading section listeners
+    readingSubjectSelect.addEventListener('change', handleReadingSubjectChange);
+    getReadingTextBtn.addEventListener('click', () => fetchReadingContent(selectedReadingSubject));
+    startRecordingBtn.addEventListener('click', startRecording);
+    stopRecordingBtn.addEventListener('click', stopRecording);
+    submitReadingBtn.addEventListener('click', submitReading);
 }
 
 // Run initialization when the DOM is fully loaded
