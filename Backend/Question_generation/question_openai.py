@@ -8,72 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-sample_json={
-  "Physics": [
-    {
-      "question": "What is the SI unit of force?",
-      "options": ["Joule", "Watt", "Newton", "Pascal"],
-      "answer": "Newton",
-      "Explanation": "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
-    },
-    {
-      "question": "Which of the following is a scalar quantity?",
-      "options": ["Velocity", "Acceleration", "Mass", "Force"],
-      "answer": "Mass",
-      "Explanation": "Mass is a scalar quantity as it only has magnitude, while velocity, acceleration, and force are vector quantities."
-    },
-    {
-      "question": "What is the formula for kinetic energy?",
-      "options": ["E = mc^2", "KE = 1/2 mv^2", "F = ma", "P = VI"],
-      "answer": "KE = 1/2 mv^2",
-      "Explanation": "Kinetic energy (KE) is the energy possessed by an object due to its motion, calculated as half times mass times velocity squared."
-    },
-    {
-      "question": "Sound travels fastest in which medium?",
-      "options": ["Air", "Water", "Vacuum", "Steel"],
-      "answer": "Steel",
-      "Explanation": "Sound travels fastest in solids (like steel) because their particles are more closely packed, allowing vibrations to transmit more efficiently."
-    },
-    {
-      "question": "What is the phenomenon of light bending as it passes from one medium to another?",
-      "options": ["Reflection", "Refraction", "Diffraction", "Dispersion"],
-      "answer": "Refraction",
-      "Explanation": "Refraction is the bending of light as it passes from one transparent medium into another, caused by a change in speed."
-    }
-  ],
-  "Chemistry": [
-    {
-      "question": "What is the chemical symbol for water?",
-      "options": ["H2O", "CO2", "NaCl", "O2"],
-      "answer": "H2O",
-      "Explanation": "Water is a chemical compound with the chemical formula H2O, meaning one oxygen atom covalently bonded to two hydrogen atoms."
-    },
-    {
-      "question": "Which element is known as the 'King of Chemicals'?",
-      "options": ["Sulfur", "Nitrogen", "Oxygen", "Carbon"],
-      "answer": "Sulfur",
-      "Explanation": "Sulfuric acid (H2SO4), derived from sulfur, is often called the 'King of Chemicals' due to its widespread industrial use."
-    },
-    {
-      "question": "What is the pH of a neutral solution at 25°C?",
-      "options": ["0", "7", "14", "10"],
-      "answer": "7",
-      "Explanation": "A neutral solution has a pH of 7 at 25°C, indicating an equal concentration of hydrogen and hydroxide ions."
-    },
-    {
-      "question": "Which gas is responsible for the green color in plants?",
-      "options": ["Oxygen", "Carbon Dioxide", "Nitrogen", "Chlorophyll"],
-      "answer": "Chlorophyll",
-      "Explanation": "Chlorophyll is the green pigment found in chloroplasts of plants, essential for photosynthesis."
-    },
-    {
-      "question": "What type of bond is formed when electrons are shared between atoms?",
-      "options": ["Ionic bond", "Metallic bond", "Covalent bond", "Hydrogen bond"],
-      "answer": "Covalent bond",
-      "Explanation": "A covalent bond is a chemical bond that involves the sharing of electron pairs between atoms."
-    }
-  ]
-}
 
 
 def generate_Question(subject: str,board: str, curr_class:int) -> dict:
@@ -83,10 +17,78 @@ def generate_Question(subject: str,board: str, curr_class:int) -> dict:
     Each subject must contain exactly 5 questions in the following format:
     Make sure every question follows NEP 2020 guidelines of India and is from a different chapter.
     Your question should be of midium to hard level of that class.
-    your answer should striclty in {sample_json} format.
+    your answer should striclty in given below example format.
     remeber this is just an sample.
 
     Only return the JSON object as output.
+  {
+      {
+    "Physics": [
+      {
+        "question": "What is the SI unit of force?",
+        "options": ["Joule", "Watt", "Newton", "Pascal"],
+        "answer": "Newton",
+        "Explanation": "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
+      },
+      {
+        "question": "Which of the following is a scalar quantity?",
+        "options": ["Velocity", "Acceleration", "Mass", "Force"],
+        "answer": "Mass",
+        "Explanation": "Mass is a scalar quantity as it only has magnitude, while velocity, acceleration, and force are vector quantities."
+      },
+      {
+        "question": "What is the formula for kinetic energy?",
+        "options": ["E = mc^2", "KE = 1/2 mv^2", "F = ma", "P = VI"],
+        "answer": "KE = 1/2 mv^2",
+        "Explanation": "Kinetic energy (KE) is the energy possessed by an object due to its motion, calculated as half times mass times velocity squared."
+      },
+      {
+        "question": "Sound travels fastest in which medium?",
+        "options": ["Air", "Water", "Vacuum", "Steel"],
+        "answer": "Steel",
+        "Explanation": "Sound travels fastest in solids (like steel) because their particles are more closely packed, allowing vibrations to transmit more efficiently."
+      },
+      {
+        "question": "What is the phenomenon of light bending as it passes from one medium to another?",
+        "options": ["Reflection", "Refraction", "Diffraction", "Dispersion"],
+        "answer": "Refraction",
+        "Explanation": "Refraction is the bending of light as it passes from one transparent medium into another, caused by a change in speed."
+      }
+    ],
+    "Chemistry": [
+      {
+        "question": "What is the chemical symbol for water?",
+        "options": ["H2O", "CO2", "NaCl", "O2"],
+        "answer": "H2O",
+        "Explanation": "Water is a chemical compound with the chemical formula H2O, meaning one oxygen atom covalently bonded to two hydrogen atoms."
+      },
+      {
+        "question": "Which element is known as the 'King of Chemicals'?",
+        "options": ["Sulfur", "Nitrogen", "Oxygen", "Carbon"],
+        "answer": "Sulfur",
+        "Explanation": "Sulfuric acid (H2SO4), derived from sulfur, is often called the 'King of Chemicals' due to its widespread industrial use."
+      },
+      {
+        "question": "What is the pH of a neutral solution at 25°C?",
+        "options": ["0", "7", "14", "10"],
+        "answer": "7",
+        "Explanation": "A neutral solution has a pH of 7 at 25°C, indicating an equal concentration of hydrogen and hydroxide ions."
+      },
+      {
+        "question": "Which gas is responsible for the green color in plants?",
+        "options": ["Oxygen", "Carbon Dioxide", "Nitrogen", "Chlorophyll"],
+        "answer": "Chlorophyll",
+        "Explanation": "Chlorophyll is the green pigment found in chloroplasts of plants, essential for photosynthesis."
+      },
+      {
+        "question": "What type of bond is formed when electrons are shared between atoms?",
+        "options": ["Ionic bond", "Metallic bond", "Covalent bond", "Hydrogen bond"],
+        "answer": "Covalent bond",
+        "Explanation": "A covalent bond is a chemical bond that involves the sharing of electron pairs between atoms."
+      }
+    ]
+  }
+  }
     """
 
     

@@ -15,9 +15,29 @@ let audioBlob;
 let currentReadingText = '';
 let selectedReadingSubject = ''; // English or Hindi
 
-// Get DOM elements
+// Get DOM elements for authentication
+const authSection = document.getElementById('auth-section');
+const authTitle = document.getElementById('auth-title');
+const showLoginBtn = document.getElementById('show-login-btn');
+const showRegisterBtn = document.getElementById('show-register-btn');
+const loginForm = document.getElementById('login-form');
+const loginUsernameInput = document.getElementById('login-username');
+const loginPasswordInput = document.getElementById('login-password');
+const registerForm = document.getElementById('register-form');
+const registerUsernameInput = document.getElementById('register-username');
+const registerPasswordInput = document.getElementById('register-password');
+const registerEmailInput = document.getElementById('register-email');
+const registerSchoolInput = document.getElementById('register-school');
+const registerPhoneNumberInput = document.getElementById('register-phone-number');
+const registerClassSelect = document.getElementById('register-class');
+const registerBoardInput = document.getElementById('register-board');
+
+const appContent = document.getElementById('app-content');
+const logoutBtn = document.getElementById('logout-btn');
+
+// Get DOM elements for main app
 const inputSection = document.getElementById('input-section');
-const studentNameInput = document.getElementById('student-name');
+const studentNameInput = document.getElementById('student-name'); // This is still used for the quiz taker's name, not login username
 const boardInput = document.getElementById('board');
 const classSelect = document.getElementById('class');
 const generateQuestionsBtn = document.getElementById('generate-questions-btn');
@@ -68,7 +88,74 @@ const motivationalQuotes = [
     "The mind is not a vessel to be filled, but a fire to be kindled."
 ];
 
-// --- Helper Functions ---
+// --- Utility Functions ---
+
+/** Fetches the JWT from localStorage. */
+function getAuthToken() {
+    return localStorage.getItem('accessToken');
+}
+
+/** Sets the JWT in localStorage. */
+function setAuthToken(token) {
+    localStorage.setItem('accessToken', token);
+}
+
+/** Removes the JWT from localStorage. */
+function removeAuthToken() {
+    localStorage.removeItem('accessToken');
+}
+
+/** Configures headers for authenticated requests. */
+function getAuthHeaders() {
+    const token = getAuthToken();
+    if (token) {
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    } else {
+        return {
+            'Content-Type': 'application/json'
+        }; // Fallback for non-authenticated or initial requests
+    }
+}
+
+/** Handles unauthorized responses. */
+function handleUnauthorized() {
+    removeAuthToken();
+    showMessage('Session expired or unauthorized. Please log in again.', 'error');
+    showAuthSection();
+}
+
+/** Shows the authentication section and hides the app content. */
+function showAuthSection() {
+    authSection.classList.remove('hidden');
+    appContent.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+    registerForm.classList.add('hidden');
+    authTitle.textContent = 'Login';
+    showLoginBtn.classList.add('bg-indigo-500', 'text-white');
+    showLoginBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    showRegisterBtn.classList.remove('bg-indigo-500', 'text-white');
+    showRegisterBtn.classList.add('bg-gray-200', 'text-gray-700');
+    // Clear form fields
+    loginUsernameInput.value = '';
+    loginPasswordInput.value = '';
+    registerUsernameInput.value = '';
+    registerPasswordInput.value = '';
+    registerEmailInput.value = '';
+    registerSchoolInput.value = ''; 
+    registerPhoneNumberInput.value = ''; 
+    registerClassSelect.value = ''; 
+    registerBoardInput.value = '';
+}
+
+/** Shows the main application content and hides the authentication section. */
+function showAppContent() {
+    authSection.classList.add('hidden');
+    appContent.classList.remove('hidden');
+    populateClassDropdown();
+}
 
 /**
  * Populates the class dropdown with options from 1 to 10.
@@ -135,9 +222,7 @@ function resetUI() {
     improvementButton.classList.add('hidden');
     proceedToReadingTestBtn.classList.add('hidden'); // Hide this button too
     retakeAttempted = false; // Reset retake flag
-    classSelect.value = ''; // Reset class dropdown
-    studentNameInput.value = ''; // Clear student name input
-    boardInput.value = ''; // Clear board input
+    // boardInput.value = ''; // No longer cleared here
 
     // Reset reading section specific elements
     readingSubjectSelect.value = '';
@@ -154,22 +239,41 @@ function resetUI() {
     selectedReadingSubject = '';
 }
 
-/** Clears the question and result sections (used when generating new questions). */
-function clearQuestionAndResultSections() {
+/** Resets only the application content UI, preserving login-related pre-filled fields. */
+function resetAppContent() {
     questionSection.classList.add('hidden');
     resultSection.classList.add('hidden');
-    readingSection.classList.add('hidden'); // Also hide reading section
+    readingSection.classList.add('hidden');
     improvementReportDisplay.classList.add('hidden');
     questionsContainer.innerHTML = '';
-    answerReviewContainer.innerHTML = ''; // Clear previous answer review
+    answerReviewContainer.innerHTML = '';
     improvementReportText.textContent = '';
-    improvementChaptersContainer.innerHTML = ''; // Clear previous chapters
+    improvementChaptersContainer.innerHTML = '';
+    userAnswers = {};
+    questionsData = {};
+    score = 0;
     retakeButton.classList.add('hidden');
     improvementButton.classList.add('hidden');
-    proceedToReadingTestBtn.classList.add('hidden'); // Hide this button too
+    proceedToReadingTestBtn.classList.add('hidden');
+    retakeAttempted = false;
+    // boardInput.value = ''; // No longer cleared here
+
+    // Reset reading section specific elements (as in resetUI)
+    readingSubjectSelect.value = '';
+    readingContentDisplay.innerHTML = '<p class="text-gray-500">Reading passage will appear here...</p>';
+    startRecordingBtn.disabled = true;
+    stopRecordingBtn.disabled = true;
+    submitReadingBtn.disabled = true;
+    readingResultsDisplay.classList.add('hidden');
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>';
+    recordingStatus.classList.add('hidden');
+    audioChunks = [];
+    audioBlob = null;
+    currentReadingText = '';
+    selectedReadingSubject = '';
 }
 
-// --- API Calls ---
+// --- API Calls (Modified for Authentication) ---
 
 /**
  * Fetches questions from the backend API.
@@ -179,25 +283,31 @@ function clearQuestionAndResultSections() {
  */
 async function fetchQuestions(board, classNum, subjects) {
     showLoading();
-    clearQuestionAndResultSections(); // Clear previous content
+    resetAppContent(); // Clear previous content
 
     try {
-        // Construct query parameters
         const params = new URLSearchParams({
             board: board,
-            class_name: String(classNum), // Ensure class_name is a string for the API
-            subjects: subjects.join(',') // Send subjects as a comma-separated string
+            class_name: String(classNum),
+            subjects: subjects.join(',')
         }).toString();
 
-        // Updated API URL to include the full server address
         const apiUrl = `http://127.0.0.1:8000/generate_mcq?${params}`;
 
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            headers: getAuthHeaders() // Include JWT
+        });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return; // Stop execution
+        }
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        questionsData = data; // Store the fetched data globally for the current attempt
+        questionsData = data; 
 
         renderQuestions(questionsData);
         questionSection.classList.remove('hidden');
@@ -206,7 +316,7 @@ async function fetchQuestions(board, classNum, subjects) {
     } catch (error) {
         console.error('Error fetching questions:', error);
         showMessage(`Failed to generate questions: ${error.message}`, 'error');
-        resetUI(); // Go back to input form on error
+        resetUI(); 
     } finally {
         hideLoading();
     }
@@ -221,35 +331,35 @@ async function fetchImprovementTopics(currentQuestionsData, currentUserAnswers) 
     showLoading();
     improvementReportDisplay.classList.add('hidden');
     improvementReportText.textContent = '';
-    improvementChaptersContainer.innerHTML = ''; // Clear previous chapters
+    improvementChaptersContainer.innerHTML = ''; 
 
     try {
-        // Updated API URL to include the full server address
         const apiUrl = `http://127.0.0.1:8000/improvement`;
         const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(), // Include JWT
             body: JSON.stringify({
-                questions: currentQuestionsData, // Sending the latest questionsData
-                user_answers: currentUserAnswers, // Sending the latest userAnswers
-                // Add context for the backend
-                class_at_call: currentClass, // The class at which this improvement call is made
-                was_retake_attempt: retakeAttempted // True if this is after a retake quiz
+                questions: currentQuestionsData,
+                user_answers: currentUserAnswers,
+                class_at_call: currentClass,
+                was_retake_attempt: retakeAttempted
             })
         });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json(); // Now expecting a JSON object with 'Report' and 'Subjects'
+        const data = await response.json();
 
         if (data.Report) {
             improvementReportText.textContent = data.Report;
-            improvementReportDisplay.classList.remove('hidden'); // Show the report section
+            improvementReportDisplay.classList.remove('hidden');
 
-            // Check for and populate subject-wise chapters if 'Subjects' key exists
             if (data.Subjects && typeof data.Subjects === 'object') {
                 for (const subjectKey in data.Subjects) {
                     if (data.Subjects.hasOwnProperty(subjectKey) && Array.isArray(data.Subjects[subjectKey])) {
@@ -295,7 +405,7 @@ async function fetchReadingContent(subject) {
     stopRecordingBtn.disabled = true;
     submitReadingBtn.disabled = true;
     readingResultsDisplay.classList.add('hidden');
-    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>'; // Clear previous results
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>'; 
 
     try {
         const params = new URLSearchParams({
@@ -305,14 +415,22 @@ async function fetchReadingContent(subject) {
         }).toString();
         const apiUrl = `http://127.0.0.1:8000/generate_reading_content?${params}`;
 
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            headers: getAuthHeaders() // Include JWT
+        });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         currentReadingText = data.text_content;
         readingContentDisplay.innerHTML = `<p>${currentReadingText}</p>`;
-        startRecordingBtn.disabled = false; // Enable start recording button
+        startRecordingBtn.disabled = false; 
         showMessage(`Reading passage for ${subject} loaded.`, 'success');
 
     } catch (error) {
@@ -328,9 +446,9 @@ async function fetchReadingContent(subject) {
  * Starts recording audio from the microphone.
  */
 async function startRecording() {
-    audioChunks = []; // Clear previous audio chunks
-    audioBlob = null; // Clear previous audio blob
-    readingResultsDisplay.classList.add('hidden'); // Hide previous results
+    audioChunks = []; 
+    audioBlob = null; 
+    readingResultsDisplay.classList.add('hidden'); 
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -341,25 +459,23 @@ async function startRecording() {
         };
 
         mediaRecorder.onstop = () => {
-            audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Use webm for broader compatibility
-            // You can now enable the submit button
+            audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); 
             submitReadingBtn.disabled = false;
             showMessage('Recording stopped. Ready to submit.', 'info');
-            // Stop the microphone stream tracks to release the mic
             stream.getTracks().forEach(track => track.stop());
         };
 
         mediaRecorder.start();
         startRecordingBtn.disabled = true;
         stopRecordingBtn.disabled = false;
-        submitReadingBtn.disabled = true; // Disable submit until recording is stopped
-        recordingStatus.classList.remove('hidden'); // Show recording animation
+        submitReadingBtn.disabled = true;
+        recordingStatus.classList.remove('hidden');
         showMessage('Recording started...', 'success');
 
     } catch (error) {
         console.error('Error accessing microphone:', error);
         showMessage(`Error accessing microphone: ${error.message}. Please allow microphone access.`, 'error');
-        startRecordingBtn.disabled = false; // Re-enable if error
+        startRecordingBtn.disabled = false; 
     }
 }
 
@@ -371,7 +487,7 @@ function stopRecording() {
         mediaRecorder.stop();
         startRecordingBtn.disabled = false;
         stopRecordingBtn.disabled = true;
-        recordingStatus.classList.add('hidden'); // Hide recording animation
+        recordingStatus.classList.add('hidden'); 
     }
 }
 
@@ -385,29 +501,34 @@ async function submitReading() {
     }
 
     showLoading();
-    readingResultsDisplay.classList.add('hidden'); // Hide previous results
-    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3><p>Analyzing your reading...</p>'; // Show loading message
+    readingResultsDisplay.classList.add('hidden'); 
+    readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3><p>Analyzing your reading...</p>'; 
 
     try {
         const formData = new FormData();
-        formData.append('audio_file', audioBlob, 'recording.webm'); // Filename can be anything
+        formData.append('audio_file', audioBlob, 'recording.webm'); 
         formData.append('original_text', currentReadingText);
         formData.append('subject', selectedReadingSubject);
 
-        const apiUrl = `http://127.0.0.1:8000/analyze_reading`; // Your backend endpoint
+        const apiUrl = `http://127.0.0.1:8000/analyze_reading`; 
 
         const response = await fetch(apiUrl, {
             method: 'POST',
+            headers: { 'Authorization': getAuthToken() ? `Bearer ${getAuthToken()}` : '' }, // Manually add Auth header for FormData
             body: formData,
-            // No 'Content-Type' header needed for FormData, browser sets it automatically
         });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
-        displayReadingResults(result); // Display the analysis results
+        displayReadingResults(result); 
 
     } catch (error) {
         console.error('Error submitting reading for analysis:', error);
@@ -416,20 +537,13 @@ async function submitReading() {
         showMessage(`Failed to analyze reading: ${error.message}`, 'error');
     } finally {
         hideLoading();
-        submitReadingBtn.disabled = true; // Disable submit after attempt
+        submitReadingBtn.disabled = true; 
     }
 }
 
 /**
  * Displays the reading analysis results.
  * @param {object} data - The analysis data from the backend with new keys.
- * {
- * "transcribed_text": "the given transcribed text",
- * "wpm": "words per miniute",
- * "accuracy": "accuarcy of Transcribed text with respect to original text",
- * "fluency": "Fluecy score of Transcription in 1-100 acore",
- * "recommendation": "recoemendation for impovement what user can improve in their reading"
- * }
  */
 function displayReadingResults(data) {
     readingResultsDisplay.innerHTML = `
@@ -452,8 +566,8 @@ function displayReadingResults(data) {
  * @param {object} data - The questions data object (e.g., { "Subject1": [...], "Subject2": [...] }).
  */
 function renderQuestions(data) {
-    questionsContainer.innerHTML = ''; // Clear previous questions
-    userAnswers = {}; // Reset user answers for new set of questions
+    questionsContainer.innerHTML = ''; 
+    userAnswers = {}; 
 
     for (const subject in data) {
         if (data.hasOwnProperty(subject) && Array.isArray(data[subject])) {
@@ -480,7 +594,7 @@ function renderQuestions(data) {
                     const optionId = `q-${subject}-${qIndex}-opt-${optIndex}`;
                     const optionLabel = document.createElement('label');
                     optionLabel.className = 'option-label';
-                    optionLabel.setAttribute('for', optionId); // Link label to input
+                    optionLabel.setAttribute('for', optionId); 
                     optionLabel.innerHTML = `
                         <input type="radio" id="${optionId}" name="question-${subject}-${qIndex}" value="${option}" class="mr-3">
                         ${option}
@@ -493,18 +607,193 @@ function renderQuestions(data) {
             });
         }
     }
-    inputSection.classList.add('hidden'); // Hide input section
-    questionSection.classList.remove('hidden'); // Show question section
+    inputSection.classList.remove('hidden'); // Keep input section visible for student name/board/class
+    questionSection.classList.remove('hidden'); 
 }
 
-// --- Event Handlers ---
+// --- Event Handlers (Modified for Authentication) ---
+
+/** Handles user login. */
+async function handleLogin(event) {
+    event.preventDefault();
+    showLoading();
+    const loginIdentifier = loginUsernameInput.value.trim(); // Can be username, email, or phone
+    const password = loginPasswordInput.value.trim();
+
+    if (!loginIdentifier || !password) {
+        showMessage('Please enter both login identifier (email/phone) and password.', 'error');
+        hideLoading();
+        return;
+    }
+
+    try {
+        const response = await fetch('http://127.0.0.1:8000/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                login: loginIdentifier,
+                password: password,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Login failed.');
+        }
+
+        const data = await response.json();
+        setAuthToken(data.access_token);
+        showMessage(`Welcome, ${data.username || 'user'}! Login successful!`, 'success');
+        showAppContent();
+
+        // Populate student name and class from login data
+        if (data.username) {
+            studentNameInput.value = data.username;
+        }
+        if (data.Class) { // 'Class' is the key from backend for class_name
+            populateClassDropdown(); // Ensure options are populated first
+            classSelect.value = String(data.Class); // Ensure it's a string for select value
+        }
+        if (data.Board) { // 'Board' is the key from backend for board
+            boardInput.value = data.Board;
+        }
+
+        // Reset other UI elements, but keep pre-populated fields
+        resetAppContent();
+    } catch (error) {
+        console.error('Login error:', error);
+        showMessage(`Login failed: ${error.message}`, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/** Handles user registration. */
+async function handleRegister(event) {
+    event.preventDefault();
+    showLoading();
+    const username = registerUsernameInput.value.trim();
+    const password = registerPasswordInput.value.trim();
+    const email = registerEmailInput.value.trim();
+    const school = registerSchoolInput.value.trim();
+    const phoneNumber = registerPhoneNumberInput.value.trim(); // JS variable name
+    const userClass = registerClassSelect.value; // JS variable name
+    const board = registerBoardInput.value.trim(); // New variable
+
+    if (!username || !password || !email || !school || !phoneNumber || !userClass || !board) {
+        showMessage('Please fill in all required registration fields.', 'error');
+        hideLoading();
+        return;
+    }
+
+    try {
+        const response = await fetch('http://127.0.0.1:8000/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                email: email,
+                school: school,
+                phone_number: phoneNumber, // Match backend snake_case
+                class_name: parseInt(userClass, 10), // Match backend snake_case and type
+                board: board // Include board in the payload
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Registration failed.');
+        }
+
+        const data = await response.json();
+        showMessage(`Registration successful for ${data.username}! You can now log in.`, 'success');
+        showLoginSection(); // Switch back to login form
+    } catch (error) {
+        console.error('Registration error:', error);
+        showMessage(`Registration failed: ${error.message}`, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/** Handles user logout. */
+function handleLogout() {
+    removeAuthToken();
+    resetUI(); // Clear app data and UI
+    showAuthSection(); // Show login/register page
+    showMessage('Logged out successfully.', 'info');
+}
+
+/** Shows the login form. */
+function showLoginSection() {
+    loginForm.classList.remove('hidden');
+    registerForm.classList.add('hidden');
+    authTitle.textContent = 'Login';
+    showLoginBtn.classList.add('bg-indigo-500', 'text-white');
+    showLoginBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    showRegisterBtn.classList.remove('bg-indigo-500', 'text-white');
+    showRegisterBtn.classList.add('bg-gray-200', 'text-gray-700');
+}
+
+/** Shows the registration form. */
+function showRegisterSection() {
+    registerForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+    authTitle.textContent = 'Register';
+    showRegisterBtn.classList.add('bg-indigo-500', 'text-white');
+    showRegisterBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    showLoginBtn.classList.remove('bg-indigo-500', 'text-white');
+    showLoginBtn.classList.add('bg-gray-200', 'text-gray-700');
+    populateRegisterClassDropdown(); // Populate dropdown when showing register form
+}
+
+/**
+ * Populates the class dropdown for the registration form with options from 1 to 10.
+ */
+function populateRegisterClassDropdown() {
+    registerClassSelect.innerHTML = '<option value="" disabled selected>Select Class</option>'; // Default disabled option
+    availableClasses.forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls;
+        option.textContent = cls;
+        registerClassSelect.appendChild(option);
+    });
+}
+
+/** Checks authentication status on page load. */
+async function checkAuth() {
+    const token = getAuthToken();
+    if (token) {
+        // Try to validate the token with a dummy request to a protected endpoint
+        try {
+            const response = await fetch('http://127.0.0.1:8000/health', { // Use a lightweight protected endpoint
+                headers: getAuthHeaders()
+            });
+
+            if (response.status === 200) {
+                showAppContent();
+            } else {
+                handleUnauthorized();
+            }
+        } catch (error) {
+            console.error('Auth check error:', error);
+            handleUnauthorized();
+        }
+    } else {
+        showAuthSection();
+    }
+}
 
 /** Handles the click event for the "Generate Questions" button. */
 async function handleGenerateQuestions() {
-    studentName = studentNameInput.value.trim(); // Get student name
+    studentName = studentNameInput.value.trim(); 
     currentBoard = boardInput.value.trim();
     const classVal = classSelect.value;
-    // currentSubjects is now fixed globally, no need to get from UI
 
     const numericClass = parseInt(classVal, 10);
 
@@ -516,19 +805,17 @@ async function handleGenerateQuestions() {
         showMessage('Please fill in Board Name.', 'error');
         return;
     }
-    if (!classVal) { // Check if a class is selected
+    if (!classVal) { 
         showMessage('Please select a Class.', 'error');
         return;
     }
-    // No subject validation needed as they are fixed
     if (isNaN(numericClass) || numericClass < 1 || numericClass > 10) {
         showMessage('Please select a valid Class number between 1 and 10.', 'error');
         return;
     }
 
-    currentClass = numericClass; // Store as number
-    // currentSubjects is already set globally
-    retakeAttempted = false; // Reset retake flag for a new generation flow
+    currentClass = numericClass; 
+    retakeAttempted = false; 
     await fetchQuestions(currentBoard, currentClass, currentSubjects);
 }
 
@@ -536,12 +823,11 @@ async function handleGenerateQuestions() {
 function handleSubmitAnswers() {
     let correctCount = 0;
     let totalQuestions = 0;
-    userAnswers = {}; // Reset user answers for current submission
+    userAnswers = {}; 
 
-    // Iterate through each subject in questionsData
     for (const subject in questionsData) {
         if (questionsData.hasOwnProperty(subject) && Array.isArray(questionsData[subject])) {
-            userAnswers[subject] = []; // Initialize array for current subject's answers
+            userAnswers[subject] = []; 
 
             questionsData[subject].forEach((q, qIndex) => {
                 totalQuestions++;
@@ -549,26 +835,22 @@ function handleSubmitAnswers() {
                 const userAnswer = selectedOptionInput ? selectedOptionInput.value : null;
                 const correctAnswer = q.answer;
 
-                // Store the user's answer (for displaying in results)
                 userAnswers[subject].push({
-                    question_text: q.question, // Store the question text
+                    question_text: q.question, 
                     user_chosen_answer: userAnswer,
                     correct_answer_text: correctAnswer
                 });
 
-                // Visual feedback for correct/incorrect answers on the quiz page itself
                 const questionBlock = questionsContainer.querySelector(`[data-subject="${subject}"][data-question-index="${qIndex}"]`);
                 if (questionBlock) {
-                    // Remove previous feedback classes
                     questionBlock.classList.remove('correct', 'incorrect');
                     const allOptionLabels = questionBlock.querySelectorAll('.option-label');
                     allOptionLabels.forEach(label => label.classList.remove('selected', 'correct-answer'));
                     const existingUserAnswerIndicators = questionBlock.querySelectorAll('.user-answer-indicator');
-                    existingUserAnswerIndicators.forEach(indicator => indicator.remove()); // Remove all existing indicators
+                    existingUserAnswerIndicators.forEach(indicator => indicator.remove());
                     const explanationDiv = questionBlock.querySelector('.explanation-text');
                     if (explanationDiv) explanationDiv.remove();
 
-                    // Add correct/incorrect class to question block
                     if (userAnswer === correctAnswer) {
                         correctCount++;
                         questionBlock.classList.add('correct');
@@ -576,21 +858,17 @@ function handleSubmitAnswers() {
                         questionBlock.classList.add('incorrect');
                     }
 
-                    // Highlight user's selected answer
                     if (selectedOptionInput) {
                         selectedOptionInput.parentElement.classList.add('selected');
-                        // Add "Your answer" indicator
                         const span = document.createElement('span');
                         span.className = 'user-answer-indicator';
                         span.textContent = '(Your Answer)';
                         selectedOptionInput.parentElement.appendChild(span);
                     }
 
-                    // Highlight the correct answer (always show)
                     const correctOptionLabel = questionBlock.querySelector(`input[value="${correctAnswer}"]`);
                     if (correctOptionLabel) {
                         correctOptionLabel.parentElement.classList.add('correct-answer');
-                        // Add "Correct answer" indicator if it wasn't the user's choice OR if user didn't select any option
                         if (userAnswer !== correctAnswer || !selectedOptionInput) {
                             const span = document.createElement('span');
                             span.className = 'user-answer-indicator';
@@ -599,8 +877,7 @@ function handleSubmitAnswers() {
                         }
                     }
 
-                    // Display explanation
-                    if (q.Explanation) { // Always show explanation if available
+                    if (q.Explanation) { 
                         const explanationText = document.createElement('div');
                         explanationText.className = 'explanation-text';
                         explanationText.textContent = `Explanation: ${q.Explanation}`;
@@ -613,7 +890,7 @@ function handleSubmitAnswers() {
 
     score = (totalQuestions > 0) ? (correctCount / totalQuestions) * 100 : 0;
     displayResults(score);
-    questionSection.classList.add('hidden'); // Hide questions after submission
+    questionSection.classList.add('hidden'); 
 }
 
 /**
@@ -624,12 +901,10 @@ function displayResults(finalScore) {
     scoreDisplay.textContent = `You scored: ${finalScore.toFixed(2)}%`;
     resultSection.classList.remove('hidden');
 
-    // Clear previous answer review content
     answerReviewContainer.innerHTML = `
         <h3 class="text-xl font-bold text-gray-700 mb-4 border-t-2 border-indigo-200 pt-4">Your Answers:</h3>
     `;
 
-    // Populate the answer review section subject-wise
     let globalQuestionNumber = 0;
     for (const subject in userAnswers) {
         if (userAnswers.hasOwnProperty(subject) && Array.isArray(userAnswers[subject])) {
@@ -654,59 +929,51 @@ function displayResults(finalScore) {
         }
     }
 
-    // Hide all action buttons and report section initially
     retakeButton.classList.add('hidden');
-    improvementButton.classList.add('hidden'); // Ensure it's hidden initially
-    improvementReportDisplay.classList.add('hidden'); // Ensure report is hidden
-    improvementReportText.textContent = ''; // Clear previous report
-    improvementChaptersContainer.innerHTML = ''; // Clear previous chapters
-    proceedToReadingTestBtn.classList.remove('hidden'); // Show proceed to reading test button
+    improvementButton.classList.add('hidden'); 
+    improvementReportDisplay.classList.add('hidden'); 
+    improvementReportText.textContent = ''; 
+    improvementChaptersContainer.innerHTML = ''; 
+    proceedToReadingTestBtn.classList.remove('hidden'); 
 
     if (finalScore < 40) {
-        // If score is less than 40%
-        // Allow retake only once and if class can be decremented by 1 (e.g., class 1 -> cannot retake, class 2 -> class 1)
         if (!retakeAttempted && currentClass >= 2) {
             retakeButton.classList.remove('hidden');
             retakeButton.textContent = `Generate Questions for Class ${currentClass - 1}`;
             showMessage(`Score less than 40%. Option to retake for Class ${currentClass - 1}.`, 'info');
         } else {
-            // If retake already attempted OR class is too low for further decrement
-            improvementButton.classList.remove('hidden'); // Show improvement button
+            improvementButton.classList.remove('hidden'); 
             showMessage('Score less than 40%. Please focus on improvement areas.', 'info');
         }
     } else {
-        // If score is 40% or more
-        improvementButton.classList.remove('hidden'); // Show improvement button
+        improvementButton.classList.remove('hidden'); 
         showMessage('Congratulations! You scored 40% or more.', 'success');
     }
 }
 
 /** Handles the click event for the "Generate Questions for Previous Class" button. */
 async function handleRetake() {
-    // Changed from currentClass >= 3 to currentClass >= 2 to allow decrement by 1
     if (currentClass >= 2) {
-        retakeAttempted = true; // Mark retake as attempted
-        currentClass = currentClass - 1; // Decrement class by 1
+        retakeAttempted = true; 
+        currentClass = currentClass - 1; 
         showMessage(`Generating questions for Class ${currentClass}...`, 'info');
         await fetchQuestions(currentBoard, currentClass, currentSubjects);
-        resultSection.classList.add('hidden'); // Hide results while new questions load
+        resultSection.classList.add('hidden'); 
     } else {
-        showMessage('Cannot go back further (already at Class 1).', 'info'); // Updated message
-        improvementButton.classList.remove('hidden'); // Offer improvement instead
+        showMessage('Cannot go back further (already at Class 1).', 'info'); 
+        improvementButton.classList.remove('hidden'); 
     }
 }
 
 /** Handles the click event for the "Get Improvement Topics" button. */
 async function handleGetImprovementTopics() {
-    // Pass the original questions data and the user's answers from the latest attempt
     await fetchImprovementTopics(questionsData, userAnswers);
 }
 
 /** Handles the click event for the "Proceed to Reading Test" button. */
 function handleProceedToReadingTest() {
-    resultSection.classList.add('hidden'); // Hide quiz results
-    readingSection.classList.remove('hidden'); // Show reading section
-    // Reset reading section state for new test
+    resultSection.classList.add('hidden'); 
+    readingSection.classList.remove('hidden'); 
     readingSubjectSelect.value = '';
     readingContentDisplay.innerHTML = '<p class="text-gray-500">Reading passage will appear here...</p>';
     startRecordingBtn.disabled = true;
@@ -714,7 +981,7 @@ function handleProceedToReadingTest() {
     submitReadingBtn.disabled = true;
     readingResultsDisplay.classList.add('hidden');
     readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>';
-    recordingStatus.classList.add('hidden'); // Hide recording animation
+    recordingStatus.classList.add('hidden'); 
     audioChunks = [];
     audioBlob = null;
     currentReadingText = '';
@@ -730,14 +997,13 @@ function handleReadingSubjectChange() {
     } else {
         getReadingTextBtn.disabled = true;
     }
-    // Reset reading content and buttons if subject changes
     readingContentDisplay.innerHTML = '<p class="text-gray-500">Reading passage will appear here...</p>';
     startRecordingBtn.disabled = true;
     stopRecordingBtn.disabled = true;
     submitReadingBtn.disabled = true;
     readingResultsDisplay.classList.add('hidden');
     readingResultsDisplay.innerHTML = '<h3>Reading Analysis Results:</h3>';
-    recordingStatus.classList.add('hidden'); // Hide recording animation
+    recordingStatus.classList.add('hidden'); 
     audioChunks = [];
     audioBlob = null;
     currentReadingText = '';
@@ -745,7 +1011,12 @@ function handleReadingSubjectChange() {
 
 // --- Initialize Application ---
 function initializeApp() {
-    populateClassDropdown();
+    // Authentication form listeners
+    showLoginBtn.addEventListener('click', showLoginSection);
+    showRegisterBtn.addEventListener('click', showRegisterSection);
+    loginForm.addEventListener('submit', handleLogin);
+    registerForm.addEventListener('submit', handleRegister);
+    logoutBtn.addEventListener('click', handleLogout);
 
     generateQuestionsBtn.addEventListener('click', handleGenerateQuestions);
     submitAnswersBtn.addEventListener('click', handleSubmitAnswers);
@@ -759,6 +1030,9 @@ function initializeApp() {
     startRecordingBtn.addEventListener('click', startRecording);
     stopRecordingBtn.addEventListener('click', stopRecording);
     submitReadingBtn.addEventListener('click', submitReading);
+
+    // Initial check for authentication status
+    checkAuth();
 }
 
 // Run initialization when the DOM is fully loaded

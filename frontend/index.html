@@ -11,123 +11,199 @@
     <div class="container bg-white p-10 rounded-3xl shadow-xl w-full max-w-4xl mt-8">
         <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-8">Test Question Generator</h1>
 
-        <div id="input-section" class="space-y-4">
-            <div>
-                <label for="student-name" class="block text-gray-700 text-lg font-semibold mb-2">Enter Your Name:</label>
-                <input type="text" id="student-name" placeholder=""
-                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+        <!-- Login/Registration Section -->
+        <div id="auth-section" class="space-y-6">
+            <h2 id="auth-title" class="text-3xl font-bold text-gray-800 mb-6 text-center">Login</h2>
+            
+            <div class="flex justify-center mb-6">
+                <button id="show-login-btn" class="bg-indigo-500 text-white px-6 py-2 rounded-lg mr-2">Login</button>
+                <button id="show-register-btn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg">Register</button>
             </div>
 
-            <div>
-                <label for="class" class="block text-gray-700 text-lg font-semibold mb-2">Class:</label>
-                <select id="class" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
-                </select>
-            </div>
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-username" class="block text-gray-700 text-lg font-semibold mb-2">Email/PhoneNumber:</label>
+                    <input type="text" id="login-username" placeholder="Enter your email or phone number" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-gray-700 text-lg font-semibold mb-2">Password:</label>
+                    <input type="password" id="login-password" placeholder="Enter your password" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg">
+                    Login
+                </button>
+            </form>
 
-            <div>
-                <label for="board" class="block text-gray-700 text-lg font-semibold mb-2">Board:</label>
-                <input type="text" id="board" placeholder="e.g., CBSE, ICSE, State Board"
-                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
-            </div>
-
-            <button id="generate-questions-btn"
-                    class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg">
-                Generate Questions
-            </button>
+            <!-- Registration Form -->
+            <form id="register-form" class="space-y-4 hidden">
+                <div>
+                    <label for="register-username" class="block text-gray-700 text-lg font-semibold mb-2">Username:</label>
+                    <input type="text" id="register-username" placeholder="Choose a username" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="register-password" class="block text-gray-700 text-lg font-semibold mb-2">Password:</label>
+                    <input type="password" id="register-password" placeholder="Create a password" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="register-email" class="block text-gray-700 text-lg font-semibold mb-2">Email:</label>
+                    <input type="email" id="register-email" placeholder="your@example.com"
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="register-school" class="block text-gray-700 text-lg font-semibold mb-2">School:</label>
+                    <input type="text" id="register-school" placeholder="Your School Name" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="register-phone-number" class="block text-gray-700 text-lg font-semibold mb-2">Phone Number:</label>
+                    <input type="tel" id="register-phone-number" placeholder="e.g., 9123456789" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="register-board" class="block text-gray-700 text-lg font-semibold mb-2">Board:</label>
+                    <input type="text" id="register-board" placeholder="e.g., CBSE, ICSE, State Board" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="register-class" class="block text-gray-700 text-lg font-semibold mb-2">Class:</label>
+                    <select id="register-class" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" required>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg">
+                    Register
+                </button>
+            </form>
         </div>
 
-        <div id="loading-overlay" class="loading-overlay">
-            <div id="loading-spinner" class="loading-spinner"></div>
-            <div id="loading-quote" class="loading-quote"></div>
-        </div>
-
-        <div id="question-section" class="hidden mt-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Generated Questions</h2>
-            <div id="questions-container" class="space-y-6">
+        <!-- Main Application Content (Initially Hidden) -->
+        <div id="app-content" class="hidden">
+            <div class="flex justify-end mb-4">
+                <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg">Logout</button>
             </div>
-            <button id="submit-answers-btn"
-                    class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mt-8">
-                Submit Answers
-            </button>
-        </div>
 
-        <div id="result-section" class="hidden mt-8 p-6 bg-blue-50 rounded-xl shadow-md text-center">
-            <h2 class="text-3xl font-bold text-blue-800 mb-4">Quiz Results</h2>
-            <p id="score-display" class="text-2xl font-semibold text-gray-700 mb-6"></p>
+            <div id="input-section" class="space-y-4">
+                <div>
+                    <label for="student-name" class="block text-gray-700 text-lg font-semibold mb-2">Enter Your Name:</label>
+                    <input type="text" id="student-name" placeholder=""
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
 
-            <button id="improvement-button"
-                    class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mb-6 hidden">
-                Get Improvement Suggestions
-            </button>
+                <div>
+                    <label for="class" class="block text-gray-700 text-lg font-semibold mb-2">Class:</label>
+                    <select id="class" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                    </select>
+                </div>
 
-            <div id="improvement-report-display" class="mt-6 p-4 bg-purple-100 border-l-4 border-purple-500 text-left rounded-lg hidden">
-                <h3 class="text-xl font-bold text-purple-800 mb-3">Improvement Report:</h3>
-                <p id="improvement-report-text" class="text-gray-700 mb-4"></p>
-                <div id="improvement-chapters-container">
+                <div>
+                    <label for="board" class="block text-gray-700 text-lg font-semibold mb-2">Board:</label>
+                    <input type="text" id="board" placeholder="e.g., CBSE, ICSE, State Board"
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                </div>
+
+                <button id="generate-questions-btn"
+                        class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg">
+                    Generate Questions
+                </button>
+            </div>
+
+            <div id="loading-overlay" class="loading-overlay">
+                <div id="loading-spinner" class="loading-spinner"></div>
+                <div id="loading-quote" class="loading-quote"></div>
+            </div>
+
+            <div id="question-section" class="hidden mt-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Generated Questions</h2>
+                <div id="questions-container" class="space-y-6">
+                </div>
+                <button id="submit-answers-btn"
+                        class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mt-8">
+                    Submit Answers
+                </button>
+            </div>
+
+            <div id="result-section" class="hidden mt-8 p-6 bg-blue-50 rounded-xl shadow-md text-center">
+                <h2 class="text-3xl font-bold text-blue-800 mb-4">Quiz Results</h2>
+                <p id="score-display" class="text-2xl font-semibold text-gray-700 mb-6"></p>
+
+                <button id="improvement-button"
+                        class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mb-6 hidden">
+                    Get Improvement Suggestions
+                </button>
+
+                <div id="improvement-report-display" class="mt-6 p-4 bg-purple-100 border-l-4 border-purple-500 text-left rounded-lg hidden">
+                    <h3 class="text-xl font-bold text-purple-800 mb-3">Improvement Report:</h3>
+                    <p id="improvement-report-text" class="text-gray-700 mb-4"></p>
+                    <div id="improvement-chapters-container">
+                    </div>
+                </div>
+
+                <div id="answer-review" class="mt-8 text-left">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-t-2 border-indigo-200 pt-4">Your Answers:</h3>
+                </div>
+
+                <div id="result-actions" class="space-y-4 mt-8">
+                    <button id="retake-button"
+                            class="w-full bg-yellow-600 text-white font-bold py-3 rounded-xl hover:bg-yellow-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg hidden">
+                        Generate Questions for Previous Class
+                    </button>
+                    <button id="proceed-to-reading-test-btn"
+                            class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mt-4">
+                        Proceed to Reading Test
+                    </button>
                 </div>
             </div>
 
-            <div id="answer-review" class="mt-8 text-left">
-                <h3 class="text-xl font-bold text-gray-700 mb-4 border-t-2 border-indigo-200 pt-4">Your Answers:</h3>
-            </div>
+            <div id="reading-section" class="hidden mt-8 p-6 bg-purple-50 rounded-xl shadow-md text-center">
+                <h2 class="text-3xl font-bold text-purple-800 mb-4">Reading Test</h2>
 
-            <div id="result-actions" class="space-y-4 mt-8">
-                <button id="retake-button"
-                        class="w-full bg-yellow-600 text-white font-bold py-3 rounded-xl hover:bg-yellow-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg hidden">
-                    Generate Questions for Previous Class
+                <div class="mb-4">
+                    <label for="reading-subject-select" class="block text-gray-700 text-lg font-semibold mb-2">Select Language:</label>
+                    <select id="reading-subject-select" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-purple-500 focus:border-purple-500 transition duration-200">
+                        <option value="" disabled selected>Choose Language</option>
+                        <option value="English">English</option>
+                        <option value="Hindi">Hindi</option>
+                    </select>
+                </div>
+
+                <button id="get-reading-text-btn"
+                        class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mb-6">
+                    Get Reading Text
                 </button>
-                <button id="proceed-to-reading-test-btn"
-                        class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mt-4">
-                    Proceed to Reading Test
-                </button>
-            </div>
-        </div>
 
-        <div id="reading-section" class="hidden mt-8 p-6 bg-purple-50 rounded-xl shadow-md text-center">
-            <h2 class="text-3xl font-bold text-purple-800 mb-4">Reading Test</h2>
+                <div id="reading-content" class="reading-content-display">
+                    <p class="text-gray-500">Reading passage will appear here...</p>
+                </div>
 
-            <div class="mb-4">
-                <label for="reading-subject-select" class="block text-gray-700 text-lg font-semibold mb-2">Select Language:</label>
-                <select id="reading-subject-select" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-purple-500 focus:border-purple-500 transition duration-200">
-                    <option value="" disabled selected>Choose Language</option>
-                    <option value="English">English</option>
-                    <option value="Hindi">Hindi</option>
-                </select>
-            </div>
+                <div class="reading-controls">
+                    <button id="start-recording-btn"
+                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" disabled>
+                        Start Recording
+                    </button>
+                    <button id="stop-recording-btn"
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" disabled>
+                        Stop Recording
+                    </button>
+                    <button id="submit-reading-btn"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" disabled>
+                        Submit Reading
+                    </button>
+                    <div id="recording-status" class="hidden flex items-center text-red-500 font-semibold ml-4">
+                        <span class="recording-dot mr-2"></span>
+                        <span>Recording...</span>
+                    </div>
+                </div>
 
-            <button id="get-reading-text-btn"
-                    class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-lg mb-6">
-                Get Reading Text
-            </button>
-
-            <div id="reading-content" class="reading-content-display">
-                <p class="text-gray-500">Reading passage will appear here...</p>
-            </div>
-
-            <div class="reading-controls">
-                <button id="start-recording-btn"
-                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" disabled>
-                    Start Recording
-                </button>
-                <button id="stop-recording-btn"
-                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" disabled>
-                    Stop Recording
-                </button>
-                <button id="submit-reading-btn"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" disabled>
-                    Submit Reading
-                </button>
-                <div id="recording-status" class="hidden flex items-center text-red-500 font-semibold ml-4">
-                    <span class="recording-dot mr-2"></span>
-                    <span>Recording...</span>
+                <div id="reading-results-display" class="hidden reading-results-display">
+                    <h3>Reading Analysis Results:</h3>
                 </div>
             </div>
-
-            <div id="reading-results-display" class="hidden reading-results-display">
-                <h3>Reading Analysis Results:</h3>
-            </div>
         </div>
-
         <div id="message-box" class="message-box"></div>
     </div>
 
